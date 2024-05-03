@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
+using Serilog;
 using TestAPIProject.Data;
+using WebApi.Helpers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -11,12 +12,21 @@ builder.Services.AddControllers();
 //yesle chai routing dinxa
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+
+//ya chai exception handel
+
 //dependecy injection of DbContext
 builder.Services.AddDbContext<APIDbContext>(Options => Options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+////logging ko lagi 
+Log.Logger = new LoggerConfiguration()
+    .ReadFrom.Configuration(builder.Configuration)
+    .CreateLogger();
 
+builder.Host.UseSerilog();
 var app = builder.Build();
 
-
+app.UseSerilogRequestLogging();
 // Configure the HTTP request pipeline.swagger used for running
 if (app.Environment.IsDevelopment())
 {
@@ -24,10 +34,13 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+
+
 app.UseHttpsRedirection();
 
 app.UseAuthorization();
-
+app.UseMiddleware<ErrorHandlerMiddleware>();
 app.MapControllers();
 
 app.Run();
+

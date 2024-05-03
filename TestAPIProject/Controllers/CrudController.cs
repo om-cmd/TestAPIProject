@@ -9,103 +9,72 @@ namespace TestAPIProject.Controllers
     public class CrudController : ControllerBase
     {
         private readonly APIDbContext _db;
+       
+
         public CrudController(APIDbContext db)
         {
             _db = db;
+           
         }
+
         [HttpGet]
         public IActionResult List()
         {
-            try
-            {
-                var allStudents = _db.Students.ToList();
-                return Ok(allStudents);
-            }
-            catch (Exception)
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while processing your request.");
-            }
+
+            var allStudents = _db.Students.Where(x=>!x.IsActive).ToList();
+            return Ok(allStudents);
+
         }
+
         [HttpGet("{id}")]
         public IActionResult GetStudent(int id)
         {
-            try
-            {
-                var student = _db.Students.Find(id);
-                return Ok(student);
-            }
-            catch (Exception)
-            {
-                return StatusCode(StatusCodes.Status404NotFound, "Id xaina mula ");
-            }
+            var student = _db.Students.Find(id);
+            return Ok(student);
 
         }
+
         [HttpPost]
         public IActionResult CreateStudent(Student student)
         {
-            try
-            {
-                var students = new Student()
-                {
-                    Name = student.Name,
-                    Address = student.Address,
-                    Age = student.Age,
-                    Phone = student.Phone,
-                };
-                _db.Students.Add(student);
-                _db.SaveChanges();
-                return Ok(student);
-
-            }
-            catch (Exception)
-            {
-                return StatusCode(StatusCodes.Status400BadRequest, "can't create");
-            }
+            _db.Students.Add(student);
+            _db.SaveChanges();
+            return Ok(student);
         }
+
         [HttpPut("{id}")]
-        public IActionResult UpdateStudent(Student student, int id)
+        public IActionResult UpdateStudent(int id, Student student)
         {
-            var stud = _db.Students.FirstOrDefault(x => x.Id == id);
-            if (stud == null)
+            var existingStudent = _db.Students.FirstOrDefault(x => x.Id == id);
+            if (existingStudent == null)
             {
-                return StatusCode(StatusCodes.Status404NotFound, "no student found");
+                return StatusCode(StatusCodes.Status404NotFound, $"Student with id {id} not found.");
             }
-            try
-            {
-                stud.Name = student.Name;
-                stud.Address = student.Address;
-                stud.Age = student.Age;
-                stud.Phone = student.Phone;
 
+            existingStudent.Name = student.Name;
+            existingStudent.Address = student.Address;
+            existingStudent.Age = student.Age;
+            existingStudent.Phone = student.Phone;
 
-                _db.SaveChanges();
-                return Ok(stud);
-            }
-            catch (Exception)
-            {
-                return StatusCode(StatusCodes.Status204NoContent, "this has no body");
-            }
+            _db.SaveChanges();
+            return Ok(existingStudent);
+
         }
+
         [HttpDelete("{id}")]
         public IActionResult DeleteStudent(int id)
         {
-            var stud = _db.Students.FirstOrDefault(x=>x.Id == id);
-            if(stud == null)
+            var existingStudent = _db.Students.FirstOrDefault(x => x.Id == id);
+            if (existingStudent == null)
             {
-                return StatusCode(StatusCodes.Status404NotFound, "no student found");
+                return StatusCode(StatusCodes.Status404NotFound, $"Student with id {id} not found.");
+            }
 
-            }
-            try
-            {
-                _db.Remove(id);
-                _db.SaveChanges();
-                return Ok(stud);
-            }
-            catch (Exception)
-            {
-                return StatusCode(StatusCodes.Status204NoContent,"kam vayena");
-            }
+            existingStudent.IsActive = true;
+            //_db.Students.Remove(existingStudent);
+            _db.SaveChanges();
+            return Ok(existingStudent);
+
         }
-
     }
 }
